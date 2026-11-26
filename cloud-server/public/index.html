@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>J2ME Cloud • Bảng điều khiển từ xa</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">J2</div>
+        <div>
+          <div class="brand-title">J2ME Cloud Console</div>
+          <div id="mode-subtitle" class="brand-sub">Đang kiểm tra chế độ kết nối…</div>
+        </div>
+      </div>
+
+      <div class="telemetry-row">
+        <span id="conn-pill" class="pill pill-muted">Chưa kết nối</span>
+        <span id="perm-pill" class="pill pill-muted">--</span>
+        <span id="fps-pill" class="pill pill-muted">0 FPS</span>
+        <span id="ping-pill" class="pill pill-muted">-- ms</span>
+        <button id="btn-disconnect" class="btn btn-ghost hidden" type="button">Ngắt kết nối</button>
+      </div>
+    </header>
+
+    <!-- Auth / Connect Gate -->
+    <main id="auth-view" class="auth-wrapper">
+      <section class="card auth-card">
+        <h1>Kết nối máy chủ Android</h1>
+        <p id="auth-desc" class="muted">
+          Nhập mã PIN 6 chữ số hiển thị trong mục <strong>Máy chủ &amp; Web</strong> trên điện thoại Android để điều khiển game.
+        </p>
+
+        <form id="auth-form" class="form-stack">
+          <div id="cloud-fields" class="form-stack">
+            <label class="field">
+              <span>Render Relay URL (wss:// hoặc https://)</span>
+              <input id="input-relay" type="text" placeholder="https://your-app.onrender.com" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Mã phòng (Room ID)</span>
+              <input id="input-room" type="text" placeholder="J2M-XXXX" autocomplete="off" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Mã PIN ghép nối</span>
+            <input id="input-pin" type="password" inputmode="numeric" maxlength="12" placeholder="Nhập 6 chữ số PIN" required />
+          </label>
+
+          <div id="auth-error" class="alert hidden"></div>
+
+          <button id="btn-connect" class="btn btn-primary btn-lg" type="submit">Kết nối ngay</button>
+        </form>
+      </section>
+    </main>
+
+    <!-- Active Remote Play Console -->
+    <main id="console-view" class="console-grid hidden">
+      <!-- Left / Center Stage: Tabs + Game Screen + Keypad -->
+      <section class="stage-column">
+        <div class="card tabs-bar-card">
+          <div class="tabs-header">
+            <span class="section-label">Tab giả lập đang chạy</span>
+            <button id="btn-stop-all" class="btn btn-danger-outline btn-sm" type="button">Dừng tất cả</button>
+          </div>
+          <div id="tabs-list" class="tabs-list"></div>
+        </div>
+
+        <div class="card screen-card">
+          <div class="screen-toolbar">
+            <div class="screen-meta">
+              <span id="active-slot-title" class="slot-title">Chưa có game đang chạy</span>
+              <span id="screen-res" class="muted mono">0 × 0</span>
+            </div>
+            <div class="toolbar-actions">
+              <button id="btn-pixelated" class="btn btn-ghost btn-sm" type="button" title="Chuyển chế độ làm mịn/pixel">Pixel sắc nét</button>
+              <button id="btn-screenshot" class="btn btn-ghost btn-sm" type="button">Chụp ảnh</button>
+              <button id="btn-fullscreen" class="btn btn-ghost btn-sm" type="button">Toàn màn hình</button>
+            </div>
+          </div>
+
+          <div id="canvas-stage" class="canvas-stage">
+            <canvas id="game-canvas" width="240" height="320" tabindex="0"></canvas>
+            <div id="stage-overlay" class="stage-overlay">
+              <div class="overlay-msg">Chọn một game ở Thư viện để khởi chạy từ xa</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Virtual Java Keypad -->
+        <div class="card keypad-card">
+          <div class="keypad-header">
+            <span class="section-label">Bàn phím Java J2ME</span>
+            <span class="muted hint-text">PC: WASD / Mũi tên • Enter = OK • Q/E = L/R • Backspace = Back • 0-9</span>
+          </div>
+
+          <div class="keypad-layout">
+            <div class="soft-dpad-col">
+              <div class="soft-row">
+                <button class="jkey jkey-soft" data-key="-6" type="button">L (Q)</button>
+                <button class="jkey jkey-warn" data-key="-8" type="button">Back</button>
+                <button class="jkey jkey-soft" data-key="-7" type="button">R (E)</button>
+              </div>
+              <div class="dpad-grid">
+                <div></div>
+                <button class="jkey jkey-dpad" data-key="-1" type="button">▲</button>
+                <div></div>
+                <button class="jkey jkey-dpad" data-key="-3" type="button">◀</button>
+                <button class="jkey jkey-ok" data-key="-5" type="button">OK</button>
+                <button class="jkey jkey-dpad" data-key="-4" type="button">▶</button>
+                <div></div>
+                <button class="jkey jkey-dpad" data-key="-2" type="button">▼</button>
+                <div></div>
+              </div>
+            </div>
+
+            <div class="numpad-grid">
+              <button class="jkey" data-key="49" type="button">1</button>
+              <button class="jkey" data-key="50" type="button">2</button>
+              <button class="jkey" data-key="51" type="button">3</button>
+              <button class="jkey" data-key="52" type="button">4</button>
+              <button class="jkey" data-key="53" type="button">5</button>
+              <button class="jkey" data-key="54" type="button">6</button>
+              <button class="jkey" data-key="55" type="button">7</button>
+              <button class="jkey" data-key="56" type="button">8</button>
+              <button class="jkey" data-key="57" type="button">9</button>
+              <button class="jkey" data-key="42" type="button">*</button>
+              <button class="jkey" data-key="48" type="button">0</button>
+              <button class="jkey" data-key="35" type="button">#</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Side Panel: Server Controls & Games Library -->
+      <aside class="side-column">
+        <div class="card control-card">
+          <div class="section-label">Điều khiển máy chủ Android</div>
+
+          <div class="control-row">
+            <span>Chạy ẩn nền 24/24</span>
+            <button id="btn-keepalive" class="btn btn-toggle btn-sm" type="button">Đang tắt</button>
+          </div>
+
+          <div class="btn-grid-3">
+            <button id="btn-toggle-vk" class="btn btn-ghost btn-sm" type="button">Phím ảo ĐT</button>
+            <button id="btn-scale-native" class="btn btn-ghost btn-sm" type="button">Tỷ lệ gốc</button>
+            <button id="btn-scale-fit" class="btn btn-ghost btn-sm" type="button">Phóng to</button>
+          </div>
+
+          <div class="stream-sliders">
+            <label class="field-inline">
+              <span>FPS</span>
+              <select id="select-fps">
+                <option value="8">8 FPS</option>
+                <option value="12">12 FPS</option>
+                <option value="15" selected>15 FPS</option>
+                <option value="20">20 FPS</option>
+                <option value="25">25 FPS</option>
+              </select>
+            </label>
+            <label class="field-inline">
+              <span>Chất lượng</span>
+              <select id="select-quality">
+                <option value="50">50%</option>
+                <option value="65">65%</option>
+                <option value="72" selected>72%</option>
+                <option value="85">85%</option>
+                <option value="92">92%</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="card library-card">
+          <div class="library-header">
+            <span class="section-label">Thư viện Game (<span id="games-count">0</span>)</span>
+            <select id="select-launch-slot" title="Chọn tab khi mở game">
+              <option value="auto">Tab tự động</option>
+              <option value="0">Tab 1</option>
+              <option value="1">Tab 2</option>
+              <option value="2">Tab 3</option>
+              <option value="3">Tab 4</option>
+            </select>
+          </div>
+          <input id="search-games" class="search-input" type="search" placeholder="Tìm game JAR trên điện thoại…" />
+          <div id="games-list" class="games-list"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
