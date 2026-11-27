@@ -416,76 +416,45 @@
 
   function enqueueFramePacket(buf) {
     pendingFramePacket = buf;
-    if (!decodingFrame) {
-      processNextFrame();
-    }
+    if (decodingFrame) return; // Nếu đang giải mã frame trước, bỏ qua frame trung gian để chạy thẳng tới frame mới nhất
+    processNextFrame();
   }
 
   async function processNextFrame() {
-    if (!pendingFramePacket) return;
-    decodingFrame = true;
-    const buf = pendingFramePacket;
-    pendingFramePacket = null;
+    while (pendingFramePacket) {
+      const buf = pendingFramePacket;
+      pendingFramePacket = null;
+      decodingFrame = true;
 
-    try {
-      const view = new DataView(buf);
-      if (buf.byteLength <= 5) return;
-      const w = view.getUint16(1);
-      const h = view.getUint16(3);
-      if (w > 0 && h > 0) {
-        gameWidth = w;
-        gameHeight = h;
-      }
-      const jpegSlice = buf.slice(5);
-      const blob = new Blob([jpegSlice], { type: 'image/jpeg' });
-      let imgWidth = w;
-      let imgHeight = h;
-
-      if (typeof createImageBitmap === 'function') {
+      try {
+        const view = new DataView(buf);
+        if (buf.byteLength <= 5) continue;
+        const w = view.getUint16(1);
+        const h = view.getUint16(3);
+        if (w > 0 && h > 0) {
+          gameWidth = w;
+          gameHeight = h;
+        }
+        const jpegSlice = buf.slice(5);
+        const blob = new Blob([jpegSlice], { type: 'image/jpeg' });
+        
         const bmp = await createImageBitmap(blob);
-        imgWidth = bmp.width;
-        imgHeight = bmp.height;
-        if (els.canvas.width !== imgWidth || els.canvas.height !== imgHeight) {
-          els.canvas.width = imgWidth;
-          els.canvas.height = imgHeight;
+        if (els.canvas.width !== bmp.width || els.canvas.height !== bmp.height) {
+          els.canvas.width = bmp.width;
+          els.canvas.height = bmp.height;
         }
         ctx.imageSmoothingEnabled = !pixelated;
         ctx.drawImage(bmp, 0, 0);
         if (typeof bmp.close === 'function') bmp.close();
-      } else {
-        await new Promise((resolve) => {
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
-          img.onload = () => {
-            imgWidth = img.naturalWidth;
-            imgHeight = img.naturalHeight;
-            if (els.canvas.width !== imgWidth || els.canvas.height !== imgHeight) {
-              els.canvas.width = imgWidth;
-              els.canvas.height = imgHeight;
-            }
-            ctx.imageSmoothingEnabled = !pixelated;
-            ctx.drawImage(img, 0, 0);
-            URL.revokeObjectURL(url);
-            resolve();
-          };
-          img.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve();
-          };
-          img.src = url;
-        });
-      }
 
-      els.stageOverlay.classList.add('hidden');
-      els.screenRes.textContent = gameWidth + ' × ' + gameHeight;
-      framesThisSec += 1;
-      lastFrameAt = Date.now();
-    } catch (_) {
-      // ignore corrupted frame
-    } finally {
-      decodingFrame = false;
-      if (pendingFramePacket) {
-        processNextFrame();
+        els.stageOverlay.classList.add('hidden');
+        els.screenRes.textContent = gameWidth + ' × ' + gameHeight;
+        framesThisSec += 1;
+        lastFrameAt = Date.now();
+      } catch (_) {
+        // Bỏ qua frame lỗi
+      } finally {
+        decodingFrame = false;
       }
     }
   }
