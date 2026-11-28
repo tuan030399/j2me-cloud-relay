@@ -1,0 +1,14 @@
+{
+  "name": "j2me-cloud-relay",
+  "version": "1.0.0",
+  "description": "J2ME Cloud Web Remote Play Console & WebSocket Relay for Render and Vercel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test server.test.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "Apache-2.0"
+}
